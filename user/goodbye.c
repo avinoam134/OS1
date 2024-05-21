@@ -4,5 +4,5 @@
 
 int main(void)
 {
-     exit("Goodbye, world\n");
+     exit(0, "Goodbye World xv6");
 }

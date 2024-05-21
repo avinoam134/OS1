@@ -77,8 +77,8 @@ int argstr(int n, char *buf, int max)
 
 // Prototypes for the functions that handle system calls.
 extern uint64 sys_fork(void);
-extern uint64 sys_exit(char *msg);
-extern uint64 sys_wait(char *msg);
+extern uint64 sys_exit(void);
+extern uint64 sys_wait(void);
 extern uint64 sys_pipe(void);
 extern uint64 sys_read(void);
 extern uint64 sys_kill(void);

@@ -18,5 +18,5 @@ void memsize_test()
 int main(int argc, char *argv[])
 {
     memsize_test();
-    exit(0);
+    exit(0, 0);
 }

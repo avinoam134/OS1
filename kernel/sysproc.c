@@ -9,15 +9,12 @@
 uint64
 sys_exit(void)
 {
-  char *msg;
-  argstr(0, msg, 32);
-  if (msg)
-    strncpy(myproc()->exit_msg, msg, 32);
-  else
-    strncpy(myproc()->exit_msg, "No exit message", 32);
+  char msg[32];
+  if (argstr(1, msg, 32) <= 0)
+    strncpy(msg, "No exit message", 32);
   int n;
   argint(0, &n);
-  exit(n);
+  exit(n, msg);
   return 0;
 }
 

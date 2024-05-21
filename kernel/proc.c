@@ -351,12 +351,14 @@ void reparent(struct proc *p)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait().
-void exit(int status)
+void exit(int status, char *msg)
 {
   struct proc *p = myproc();
 
   if (p == initproc)
     panic("init exiting");
+
+  strncpy(p->exit_msg, msg, strlen(msg) + 1);
 
   // Close all open files.
   for (int fd = 0; fd < NOFILE; fd++)
@@ -427,7 +429,7 @@ int wait(uint64 addr, uint64 exit_msg_ptr)
             release(&wait_lock);
             return -1;
           }
-          if (copyout(p->pagetable, exit_msg_ptr, (uint64)(pp->exit_msg), strlen(pp->exit_msg) + 1) < 0)
+          if (copyout(p->pagetable, exit_msg_ptr, (char *)(pp->exit_msg), strlen(pp->exit_msg) + 1) < 0)
           {
             release(&pp->lock);
             release(&wait_lock);
