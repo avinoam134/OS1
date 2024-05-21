@@ -9,10 +9,16 @@
 uint64
 sys_exit(void)
 {
+  char *msg;
+  argstr(0, msg, 32);
+  if (msg)
+    strncpy(myproc()->exit_msg, msg, 32);
+  else
+    strncpy(myproc()->exit_msg, "No exit message", 32);
   int n;
   argint(0, &n);
   exit(n);
-  return 0;  // not reached
+  return 0;
 }
 
 uint64
@@ -31,8 +37,10 @@ uint64
 sys_wait(void)
 {
   uint64 p;
+  uint64 exit_msg_ptr;
   argaddr(0, &p);
-  return wait(p);
+  argaddr(1, &exit_msg_ptr); // Get the second argument
+  return wait(p, exit_msg_ptr);
 }
 
 uint64
@@ -43,7 +51,7 @@ sys_sbrk(void)
 
   argint(0, &n);
   addr = myproc()->sz;
-  if(growproc(n) < 0)
+  if (growproc(n) < 0)
     return -1;
   return addr;
 }
@@ -57,8 +65,10 @@ sys_sleep(void)
   argint(0, &n);
   acquire(&tickslock);
   ticks0 = ticks;
-  while(ticks - ticks0 < n){
-    if(killed(myproc())){
+  while (ticks - ticks0 < n)
+  {
+    if (killed(myproc()))
+    {
       release(&tickslock);
       return -1;
     }
@@ -89,3 +99,7 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// return the size of the current process's memory in bytes:
+uint64
+sys_memsize(void) { return myproc()->sz; }

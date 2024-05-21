@@ -1,7 +1,9 @@
 {
     "files.associations": {
+        "*.ejs": "html",
         "types.h": "c",
         "riscv.h": "c",
         "defs.h": "c",
+        "stat.h": "c"
     },
 }
