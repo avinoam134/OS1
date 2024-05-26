@@ -9,12 +9,23 @@
 uint64
 sys_exit(void)
 {
+  uint64 msg_ptr;
+  argaddr(1, &msg_ptr);
   char msg[32];
-  if (argstr(1, msg, 32) <= 0)
-    strncpy(msg, "No exit message", 32);
+  if (!msg_ptr || fetchstr(msg_ptr, msg, 32) <= 0)
+    strncpy(msg, "No exit message", 16);
   int n;
   argint(0, &n);
   exit(n, msg);
+  return 0;
+}
+
+uint64
+sys_set_affinity_mask(void)
+{
+  int mask;
+  argint(0, &mask);
+  set_affinity_mask(mask);
   return 0;
 }
 

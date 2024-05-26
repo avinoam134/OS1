@@ -55,6 +55,8 @@ void procinit(void)
     initlock(&p->lock, "proc");
     p->state = UNUSED;
     p->kstack = KSTACK((int)(p - proc));
+    p->affinity_mask = 0;
+    p->effective_affinity_mask = 0;
   }
 }
 
@@ -126,7 +128,8 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
-
+  p->affinity_mask = 0;
+  p->effective_affinity_mask = 0;
   // Allocate a trapframe page.
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0)
   {
@@ -173,6 +176,8 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->affinity_mask = 0;
+  p->effective_affinity_mask = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -302,7 +307,8 @@ int fork(void)
     return -1;
   }
   np->sz = p->sz;
-
+  np->affinity_mask = p->affinity_mask; // np is the parent, p is the child
+  np->effective_affinity_mask = p->effective_affinity_mask;
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 
@@ -395,6 +401,14 @@ void exit(int status, char *msg)
   sched();
   panic("zombie exit");
 }
+void set_affinity_mask(uint16 mask)
+{
+  struct proc *p = myproc();
+  acquire(&p->lock);
+  p->affinity_mask = mask;
+  p->effective_affinity_mask = mask;
+  release(&p->lock);
+}
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
@@ -467,7 +481,7 @@ void scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-
+  int id = cpuid();
   c->proc = 0;
   for (;;)
   {
@@ -477,13 +491,14 @@ void scheduler(void)
     for (p = proc; p < &proc[NPROC]; p++)
     {
       acquire(&p->lock);
-      if (p->state == RUNNABLE)
+      if (p->state == RUNNABLE && (p->affinity_mask == 0 || (p->effective_affinity_mask & (1 << id))))
       {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
+        printf("scheduler: running process %d on CPU %d\n", p->pid, id);
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
@@ -527,6 +542,15 @@ void yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
+  int id = 1 << cpuid();
+  intr_off();
+  p->effective_affinity_mask = id ^ p->effective_affinity_mask;
+  intr_on();
+  if (p->effective_affinity_mask == 0)
+  {
+
+    p->effective_affinity_mask = p->affinity_mask;
+  }
   sched();
   release(&p->lock);
 }

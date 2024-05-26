@@ -124,6 +124,7 @@ UPROGS=\
 	$U/_forktest\
 	$U/_memsize_test\
 	$U/_goodbye\
+	$U/_affinity_test\
 	$U/_grep\
 	$U/_init\
 	$U/_kill\
